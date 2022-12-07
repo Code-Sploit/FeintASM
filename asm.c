@@ -128,8 +128,8 @@ int AssembleELF64(char *__file)
     fwrite(&elf_hdr_prog, sizeof(char) * 12, 1, __ptr_w);*/
 
     fwrite(&hdr_magic, sizeof(char) * 4, 1, __ptr_w);
-    fwrite(&hdr_start, sizeof(uint16_t) * 38, 1, __ptr_w);
-    fwrite(&hdr_minstr, sizeof(uint16_t) * 8, 1, __ptr_w);
+    fwrite(&hdr_start, sizeof(uint16_t) * 40, 1, __ptr_w);
+    fwrite(&hdr_minstr, sizeof(uint16_t) * 20, 1, __ptr_w);
 
     fclose(__ptr_w);
 
