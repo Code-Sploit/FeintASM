@@ -1,5 +1,5 @@
-; hello there this is a comment
+; comments are written like this
 
 mov eax, 0 ; set syscall instruction
 mov ebx, 0 ; set syscall argument in this case (exit status)
-syscall ; syscall
+syscall
