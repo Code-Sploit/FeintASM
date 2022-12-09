@@ -53,15 +53,6 @@ static uint16_t ELF_HDR_SRT[] = {
     0x05, 0x00,
     0x1000, 0x00,
 };
-/*
-static uint16_t hdr_minstr[] = {
-    0x01b8, 0x04, // MOV ecx, 10
-    0xbb00, 0x01, // MOV edx, 1
-    0x00, 0x80cd,  // SYSCALL
-    0x01b8, 0x00, // MOV eax, 0
-    0xbb00, 0x01, // MOV ebx, 1
-    0x00, 0x80cd  // Syscall
-};*/
 
 typedef struct ELF_FILE_STRUCT {
     uint16_t PHDR[HDR_SRT_SIZE];
@@ -76,7 +67,5 @@ typedef struct ELF_FILE_STRUCT {
 } ELF_File;
 
 ELF_File *NewELFFile(char *__fsrc);
-
-void SetELFInst(ELF_File *__eptr, uint16_t __minstr[HDR_MAX_SIZE]);
 
 int AssembleELF64(char *__file);
