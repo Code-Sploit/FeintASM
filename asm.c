@@ -13,125 +13,256 @@ int MatchExpr(char *__e1, char *__e2)
     return !__res;
 }
 
-int AssembleELF64(char *__file)
+ELF_File *NewELFFile(char *__fsrc)
 {
-    const char *__mode = "rb";
+    ELF_File *__eptr = calloc(1, sizeof(ELF_File));
 
-    FILE *__ptr = fopen(__file, __mode);
-
-    if (!__ptr)
+    for (int i = 0; i < HDR_MGC_SIZE; i++)
     {
-        printf("\nError while opening: (%s) in mode: (%s)\n", __file, __mode);
-
-        exit(-1);
+        __eptr->MHDR[i] = ELF_HDR_MAGIC[i];
     }
 
-    /*
-    1) Lex each line
-    2) Write machine code into file
-    3) Done
-    */
+    for (int i = 0; i < HDR_SRT_SIZE; i++)
+    {
+        __eptr->EHDR[i] = ELF_HDR_SRT[i];
+    }
 
-    char *__contents = calloc(1, sizeof(char));
-    char *__sTemp    = calloc(1, sizeof(char));
+    __eptr->__fsrc = __fsrc;
+
+    return __eptr;
+}
+
+void SetELFInst(ELF_File *__eptr, uint16_t __minstr[HDR_MAX_SIZE])
+{
+    for (int i = 0; i < HDR_MAX_SIZE; i++)
+    {
+        __eptr->SHDR[i] = __minstr[i];
+    }
+}
+
+void AppendELFInst(ELF_File *__eptr, uint16_t __inst)
+{
+    __eptr->SHDR[__eptr->__minc] = __inst;
+
+    __eptr->__minc += 1;
+}
+
+char *TranslateIdToError(int __code)
+{
+    switch (__code)
+    {
+        case ERROR_INVALID_FILE_POINTER:
+        {
+            return "Error invalid FILE pointer!";
+        }
+
+        case ERROR_INVALID_REGISTER:
+        {
+            return "Error invalid register!";
+        }
+    }
+
+    return "Unknown error!";
+}
+
+uint16_t ConvertCharToBase16(char *__cstr)
+{
+    uint16_t __result = strtol(__cstr, NULL, 16);
+
+    return __result;
+}
+
+int WriteMovInstruction(FILE *__fptr, char *__reg, char *__val)
+{
+    if (!__fptr) {return ERROR_INVALID_FILE_POINTER;}
+
+    unsigned int _reg_matched = 0;
+
+    if (MatchExpr(__reg, "eax"))
+    {
+        _reg_matched = 1;
+
+        uint16_t __utval = ConvertCharToBase16(__val);
+
+        fwrite(&EAX, sizeof(uint16_t), 1, __fptr);
+        fwrite(&__utval, sizeof(uint16_t), 1, __fptr);
+    }
+
+    if (MatchExpr(__reg, "ebx"))
+    {
+        _reg_matched = 1;
+
+        uint16_t __utval = ConvertCharToBase16(__val);
+
+        fwrite(&EBX, sizeof(uint16_t), 1, __fptr);
+        fwrite(&__utval, sizeof(uint16_t), 1, __fptr);
+    }
+
+    if (MatchExpr(__reg, "ecx"))
+    {
+        _reg_matched = 1;
+
+        uint16_t __utval = ConvertCharToBase16(__val);
+
+        fwrite(&ECX, sizeof(uint16_t), 1, __fptr);
+        fwrite(&__utval, sizeof(uint16_t), 1, __fptr);
+    }
+
+    if (MatchExpr(__reg, "edx"))
+    {
+        _reg_matched = 1;
+
+        uint16_t __utval = ConvertCharToBase16(__val);
+
+        fwrite(&EDX, sizeof(uint16_t), 1, __fptr);
+        fwrite(&__utval, sizeof(uint16_t), 1, __fptr);
+    }
+
+    if (_reg_matched == 0) {return ERROR_INVALID_REGISTER;}
+
+    return 0;
+}
+
+int WriteSyscallInstruction(FILE *__fptr)
+{
+    if (!__fptr) {return ERROR_INVALID_FILE_POINTER;}
+
+    fwrite(&PRE_SYSCALL, sizeof(uint16_t), 1, __fptr);
+    fwrite(&SYSCALL, sizeof(uint16_t), 1, __fptr);
+
+    return 0;
+}
+
+int AssembleELF64(char *__file)
+{
+    /* Define stuff */
+    const char *__fmode_w = "wb";
+    const char *__fmode_r = "rb";
+
+    const char *__ofile   = "output.bin";
+    
+    char *__fline = calloc(1, sizeof(char));
+    char *__fcons = calloc(1, sizeof(char));
 
     size_t Length;
     ssize_t Read;
 
-    while ((Read = getline(&__sTemp, &Length, __ptr)) != -1)
-    {
-        __contents = realloc(__contents, (strlen(__contents) + strlen(__sTemp) + 1));
+    /* Open the file */
+    FILE *__fptr_r = fopen(__file, __fmode_r);
 
-        strcat(__contents, __sTemp);
+    if (!__fptr_r)
+    {
+        printf("Error while opening file: (%s) in const mode: (%s)\n", __file, __fmode_r);
+
+        exit(-1);
     }
 
-    printf("\n--------------\n");
-    printf("Read file contents: ");
+    /* Read the file */
+    while ((Read = getline(&__fline, &Length, __fptr_r)) != -1)
+    {
+        __fcons = realloc(__fcons, (strlen(__fcons) + strlen(__fline) + 1));
 
-    printf("\n--------------\n%s\n--------------\n", __contents);
+        strcat(__fcons, __fline);
+    }
 
-    printf("TOKEN LIST:\n--------------\n");
+    /* Close the read pointer FILE */
+    fclose(__fptr_r);
+
+    /* Open the output file for writing */
+    FILE *__fptr_w = fopen(__ofile, __fmode_w);
+
+    if (!__fptr_w)
+    {
+        printf("Error while opening file: (%s) in const mode (%s)\n", __ofile, __fmode_w);
+
+        exit(-1);
+    }
+
+    /* Create new ELF object */
+    ELF_File *__eptr = NewELFFile(__file);
+
+    /* Write ELF header to file */
+    fwrite(__eptr->MHDR, sizeof(char) * HDR_MGC_SIZE, 1, __fptr_w);
+    fwrite(__eptr->EHDR, sizeof(uint16_t) * HDR_SRT_SIZE, 1, __fptr_w);
 
     /* Initialize a lexer */
-
-    ASMLexer_T *lexer  = InitializeASMLexer(__contents);
+    ASMLexer_T *lexer  = InitializeASMLexer(__fcons);
     ASMToken_Node *tok = ASMLexerGetNextToken(lexer);
 
+    /* Parse the file */
     while (tok->Type != ASMToken_EOF)
     {
-        if (tok->Type == ASMToken_ID)
+        unsigned int _type = tok->Type;
+        char *_value       = tok->_value;
+
+        if (_type == ASMToken_ID)
         {
-            if (MatchExpr(tok->_value, ASM_SYNTAX_MOV))
+            if (MatchExpr(_value, ASM_SYNTAX_MOV))
             {
-                printf("\nMOV Instruction!\n");
+                printf("Instruction MOV:\n");
 
-                /* Next tokens should be: (register, TOKEN_COMMA, value) ! */
+                /* Next token order should be: 
+                MOV (reg), (val)
 
-                ASMToken_Node *__register = ASMLexerGetNextToken(lexer);
-                ASMToken_Node *__comma    = ASMLexerGetNextToken(lexer);
-                ASMToken_Node *__value    = ASMLexerGetNextToken(lexer);
+                -> reg = {eax, ebx, ecx, edx}
+                -> val = typeof: {int}
+                */
 
-                printf("REG: (%s)\n", __register->_value);
-                printf("VAL: (%s)\n", __value->_value);
+                ASMToken_Node *__reg = ASMLexerGetNextToken(lexer);
+                ASMToken_Node *__com = ASMLexerGetNextToken(lexer);
+                ASMToken_Node *__val = ASMLexerGetNextToken(lexer);
+
+                char *__regv = __reg->_value;
+                char *__comv = __com->_value;
+                char *__valv = __val->_value;
+
+                /* Write instructions to file */
+                int __ret = WriteMovInstruction(__fptr_w, __regv, __valv);
+
+                if (__ret != 0)
+                {
+                    printf("Error code (%d): [%s]", __ret, TranslateIdToError(__ret));
+
+                    exit(-1);
+                }
             }
 
-            if (MatchExpr(tok->_value, ASM_SYNTAX_POP))
+            if (MatchExpr(_value, ASM_SYNTAX_SYSCALL))
             {
-                printf("\nPOP Instruction!\n");
+                printf("Instruction SYSCALL:\n");
 
-                /* Next tokens should be: (register) ! */
+                /* Next token order should be:
+                SYSCALL
+                */
 
-                ASMToken_Node *__register = ASMLexerGetNextToken(lexer);
+                int __ret = WriteSyscallInstruction(__fptr_w);
 
-                printf("REG: (%s)\n", __register->_value);
-            }
+                if (__ret != 0)
+                {
+                    printf("Error code (%d): [%s]", __ret, TranslateIdToError(__ret));
 
-            if (MatchExpr(tok->_value, ASM_SYNTAX_PUSH))
-            {
-                printf("\nPUSH Instruction!\n");
-
-                /* Next tokens should be: (register) ! */
-
-                ASMToken_Node *__register = ASMLexerGetNextToken(lexer);
-
-                printf("REG: (%s)\n", __register->_value);
-            }
-
-            if (MatchExpr(tok->_value, ASM_SYNTAX_SYSCALL))
-            {
-                printf("\nSYSCALL Instruction!\n");
-
-                /* Next tokens should be: (null) ! */
-
-                printf("(null)\n");
+                    exit(-1);
+                }
             }
         }
 
         tok = ASMLexerGetNextToken(lexer);
     }
 
-    fclose(__ptr);
-
-    FILE *__ptr_w = fopen("output", "wb");
-
-    if (!__ptr_w)
-    {
-        printf("\nError opening (output)!\n");
-
-        exit(1);
-    }
-
-    //write(__ptr_w, &elf_hdr_default, ELF_HDR_SIZE);
+    /* Generate an uint16_t array of minstructions */
     /*
-    fwrite(&elf_hdr_default, ELF_HDR_SIZE, 1, __ptr_w);
-    fwrite(&elf_prog_hdr_default, ELF_HDR_SIZE, 1, __ptr_w);
-    fwrite(&elf_hdr_prog, sizeof(char) * 12, 1, __ptr_w);*/
+    uint16_t hdr_minstr[HDR_MAX_SIZE] = {
+        0x01b8, 0x04, // MOV ecx, 10
+        0xbb00, 0x01, // MOV edx, 1
+        0x00, 0x80cd,  // SYSCALL
+        0x01b8, 0x00, // MOV eax, 0
+        0xbb00, 0x01, // MOV ebx, 1
+        0x00, 0x80cd  // Syscall
+    };*/
 
-    fwrite(&hdr_magic, sizeof(char) * 4, 1, __ptr_w);
-    fwrite(&hdr_start, sizeof(uint16_t) * 40, 1, __ptr_w);
-    fwrite(&hdr_minstr, sizeof(uint16_t) * 20, 1, __ptr_w);
+    /* Close the file */
+    fclose(__fptr_w);
 
-    fclose(__ptr_w);
-
+    /* Done */
     return 0;
 }
