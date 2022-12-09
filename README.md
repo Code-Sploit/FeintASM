@@ -5,8 +5,10 @@
 Create ELF32/ELF64 binary executables from Feint Assembly code
 
 # Current
-Able to create ELF32 binary executables
+1. Able to create ELF32 binary executables
+2. Able to move integer values into registers
+3. Able to set exit status
 
 # Todo
-1. Token list -> Machine instructions
+1. Add more operations
 2. Add support for ELF64 / 64 bit instructions
