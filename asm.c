@@ -32,14 +32,6 @@ ELF_File *NewELFFile(char *__fsrc)
     return __eptr;
 }
 
-void SetELFInst(ELF_File *__eptr, uint16_t __minstr[HDR_MAX_SIZE])
-{
-    for (int i = 0; i < HDR_MAX_SIZE; i++)
-    {
-        __eptr->SHDR[i] = __minstr[i];
-    }
-}
-
 void AppendELFInst(ELF_File *__eptr, uint16_t __inst)
 {
     __eptr->SHDR[__eptr->__minc] = __inst;
@@ -248,17 +240,6 @@ int AssembleELF64(char *__file)
 
         tok = ASMLexerGetNextToken(lexer);
     }
-
-    /* Generate an uint16_t array of minstructions */
-    /*
-    uint16_t hdr_minstr[HDR_MAX_SIZE] = {
-        0x01b8, 0x04, // MOV ecx, 10
-        0xbb00, 0x01, // MOV edx, 1
-        0x00, 0x80cd,  // SYSCALL
-        0x01b8, 0x00, // MOV eax, 0
-        0xbb00, 0x01, // MOV ebx, 1
-        0x00, 0x80cd  // Syscall
-    };*/
 
     /* Close the file */
     fclose(__fptr_w);
