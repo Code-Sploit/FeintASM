@@ -1,3 +1,5 @@
-mov eax, 0
-mov ebx, 0
-syscall
+; hello there this is a comment
+
+mov eax, 0 ; set syscall instruction
+mov ebx, 0 ; set syscall argument in this case (exit status)
+syscall ; syscall
