@@ -141,8 +141,8 @@ int AssembleELF64(char *__file)
 
     const char *__ofile   = "output.bin";
     
-    char *__fline = calloc(1, sizeof(char));
     char *__fcons = calloc(1, sizeof(char));
+    char *__fline;
 
     size_t Length;
     ssize_t Read;
@@ -199,7 +199,7 @@ int AssembleELF64(char *__file)
         {
             if (MatchExpr(_value, ASM_SYNTAX_MOV))
             {
-                printf("Instruction MOV:\n");
+                printf("Instruction MOV\n");
 
                 /* Next token order should be: 
                 MOV (reg), (val)
@@ -229,7 +229,7 @@ int AssembleELF64(char *__file)
 
             if (MatchExpr(_value, ASM_SYNTAX_SYSCALL))
             {
-                printf("Instruction SYSCALL:\n");
+                printf("Instruction SYSCALL\n");
 
                 /* Next token order should be:
                 SYSCALL
