@@ -4,11 +4,35 @@
 #include <stdio.h>
 
 #include "lexer.h"
-static char hdr_magic[] = {
+
+/* Keyword definitions */
+
+static uint16_t EAX = 0x01b8;
+static uint16_t EBX = 0xbb00;
+static uint16_t ECX = 0x01b9;
+static uint16_t EDX = 0x01bb;
+
+static uint16_t PRE_SYSCALL = 0x0000;
+static uint16_t SYSCALL = 0x80cd;
+
+/* Error type definitions */
+
+#define ERROR_INVALID_REGISTER 10
+#define ERROR_INVALID_FILE_POINTER 20
+
+/* Hdr size definitions */
+
+#define ELF_HDR_SIZE (0x40)
+
+#define HDR_MAX_SIZE 20
+#define HDR_SRT_SIZE 40
+#define HDR_MGC_SIZE 4
+
+static char ELF_HDR_MAGIC[] = {
     0x7f, 0x45, 0x4c, 0x46
 };
 
-static uint16_t hdr_start[] = {
+static uint16_t ELF_HDR_SRT[] = {
     0x0102,
     0x01,
     0x00,
@@ -29,7 +53,7 @@ static uint16_t hdr_start[] = {
     0x05, 0x00,
     0x1000, 0x00,
 };
-
+/*
 static uint16_t hdr_minstr[] = {
     0x01b8, 0x04, // MOV ecx, 10
     0xbb00, 0x01, // MOV edx, 1
@@ -37,10 +61,22 @@ static uint16_t hdr_minstr[] = {
     0x01b8, 0x00, // MOV eax, 0
     0xbb00, 0x01, // MOV ebx, 1
     0x00, 0x80cd  // Syscall
-};
+};*/
 
-#define ELF_HDR_SIZE (0x40)
+typedef struct ELF_FILE_STRUCT {
+    uint16_t PHDR[HDR_SRT_SIZE];
+    uint16_t SHDR[HDR_MAX_SIZE];
+    uint16_t EHDR[HDR_SRT_SIZE];
 
-int MatchExpr(char *__e1, char *__e2);
+    unsigned int __minc;
+
+    char MHDR[HDR_MGC_SIZE];
+
+    char *__fsrc;
+} ELF_File;
+
+ELF_File *NewELFFile(char *__fsrc);
+
+void SetELFInst(ELF_File *__eptr, uint16_t __minstr[HDR_MAX_SIZE]);
 
 int AssembleELF64(char *__file);
