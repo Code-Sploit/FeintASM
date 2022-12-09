@@ -159,9 +159,16 @@ ASMToken_Node *ASMLexerGetNextToken(ASMLexer_T *ASMLexer)
                 case '=': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken("=", ASMToken_IS);}
                 case '{': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken("{", ASMToken_RBRACE);}
                 case '}': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken("}", ASMToken_LBRACE);}
-                case ';': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken(";", ASMToken_SEMICOLON);}
                 case ',': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken(",", ASMToken_COMMA);}
                 case '"': {ASMLexerAdvanceCharacter(ASMLexer); return InitializeASMToken(ASMLexerGetValue(ASMLexer), ASMToken_ID);}
+
+                /* Comments */
+                case ';': {
+                    while (ASMLexerPeekOffset(ASMLexer, 0) != '\n')
+                    {
+                        ASMLexerAdvanceCharacter(ASMLexer);
+                    }
+                }
             }
         }
 
